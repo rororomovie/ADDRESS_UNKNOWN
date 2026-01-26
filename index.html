@@ -1,7 +1,7 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>—</title>
+<title>address unknown</title>
 
 <style>
   body{
@@ -16,9 +16,20 @@
     white-space: pre-wrap;
     margin: 0;
   }
-  a{
-    color: inherit;
-    text-decoration: underline;
+  input{
+    margin-top: 12px;
+    padding: 8px 10px;
+    width: min(520px, 100%);
+    font: inherit;
+    border: 1px solid #000;
+    background: #fff;
+  }
+  button{
+    margin-top: 10px;
+    padding: 6px 12px;
+    font: inherit;
+    border: 1px solid #000;
+    background: #fff;
     cursor: pointer;
   }
   .muted{
@@ -26,29 +37,50 @@
   }
 </style>
 
-<pre id="text">loading...</pre>
-<div id="tail" class="muted"></div>
+<h1>address unknown</h1>
+
+<pre class="muted">
+宛所に尋ねありません
+
+ここは入口です。
+あなたが“宛名”を知っているなら、書いてください。
+</pre>
+
+<input
+  id="pass"
+  placeholder="宛名"
+  autocomplete="off"
+  spellcheck="false"
+/>
+<br>
+<button id="go">投函する</button>
+
+<pre id="msg" class="muted"></pre>
 
 <script>
-(async () => {
-  try{
-    // stage1 の本文（テキストのみ）
-    const res = await fetch("Undelivered_letter.txt", { cache: "no-store" });
-    const text = await res.text();
-    document.getElementById("text").textContent = text;
+  // stage1 に進むための合言葉
+  const PASSWORD = "DFFUITT_VQNQPAQ";
 
-    // 最後にだけ誘導を追加
-    const tail = document.getElementById("tail");
-    tail.append(document.createTextNode("\n\n――投函を終えたなら、門へ。\n\n"));
+  const pass = document.getElementById("pass");
+  const msg  = document.getElementById("msg");
+  const go   = document.getElementById("go");
 
-    const link = document.createElement("a");
-    // 相対パス：リポ名が変わっても壊れない
-    link.href = "../decrypt.html";
-    link.textContent = "→ 門を開く";
-    tail.append(link);
-
-  }catch(e){
-    document.getElementById("text").textContent = "undelivered";
+  function submit(){
+    const v = (pass.value || "").trim();
+    if(!v){
+      msg.textContent = "……宛名が空です。";
+      return;
+    }
+    if(v === PASSWORD){
+      location.href = "stage1/";
+    }else{
+      msg.textContent = "宛所に尋ねありません。";
+      pass.select();
+    }
   }
-})();
+
+  go.addEventListener("click", submit);
+  pass.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") submit();
+  });
 </script>
