@@ -5,24 +5,21 @@
 
 <style>
   body{
-    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,
-                 "Liberation Mono","Courier New",monospace;
-    padding:16px;
-    line-height:1.7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                 "Liberation Mono","Courier New", monospace;
+    padding:18px;
+    line-height:1.9;
     background:#fff;
     color:#000;
   }
   pre{
     white-space:pre-wrap;
-    word-break:break-word;
     margin:0;
   }
   .muted{opacity:.7}
 </style>
 
-<h1 id="title">address unknown</h1>
-<p id="hint" class="muted">鍵は URL の <code>#</code> の後ろに入れてください。</p>
-<pre id="out">loading...</pre>
+<pre id="out" class="muted">loading...</pre>
 
 <script>
 async function sha256(bytes){
@@ -37,17 +34,15 @@ function b64ToU8(b64){
 }
 
 (async () => {
-  const out   = document.getElementById("out");
-  const title = document.getElementById("title");
-  const hint  = document.getElementById("hint");
-
+  const out = document.getElementById("out");
   const keyStr = decodeURIComponent(location.hash.slice(1) || "");
+
   if(!keyStr){
     out.textContent = "……宛名が見当たりません。";
     return;
   }
 
-  const res = await fetch("final.enc.json", {cache:"no-store"});
+  const res = await fetch("final.enc.json", { cache: "no-store" });
   if(!res.ok){
     out.textContent = "undelivered";
     return;
@@ -58,7 +53,7 @@ function b64ToU8(b64){
   const aesKey = await crypto.subtle.importKey(
     "raw",
     keyBytes,
-    {name:"AES-GCM"},
+    { name:"AES-GCM" },
     false,
     ["decrypt"]
   );
@@ -68,18 +63,17 @@ function b64ToU8(b64){
     const ct = b64ToU8(pack.ct_b64);
 
     const plainBuf = await crypto.subtle.decrypt(
-      {name:"AES-GCM", iv},
+      { name:"AES-GCM", iv },
       aesKey,
       ct
     );
 
     // ===== 復号成功 =====
-    // 余計なUIを消す
-    title.remove();
-    hint.remove();
-
-    // 本文だけ表示
-    out.textContent = new TextDecoder().decode(plainBuf);
+    // bodyを完全に置き換える（タイトル・説明文が残る余地ゼロ）
+    document.body.innerHTML = "";
+    const pre = document.createElement("pre");
+    pre.textContent = new TextDecoder().decode(plainBuf);
+    document.body.appendChild(pre);
 
   }catch(e){
     out.textContent = "……鍵が違います。";
