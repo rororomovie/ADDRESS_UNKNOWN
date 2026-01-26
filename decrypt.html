@@ -2,15 +2,26 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>address unknown</title>
+
 <style>
-  body{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
-       padding:16px; line-height:1.7;}
-  pre{white-space:pre-wrap; word-break:break-word;}
+  body{
+    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,
+                 "Liberation Mono","Courier New",monospace;
+    padding:16px;
+    line-height:1.7;
+    background:#fff;
+    color:#000;
+  }
+  pre{
+    white-space:pre-wrap;
+    word-break:break-word;
+    margin:0;
+  }
   .muted{opacity:.7}
 </style>
 
-<h1>address unknown</h1>
-<p class="muted">鍵は URL の <code>#</code> の後ろに入れてください。</p>
+<h1 id="title">address unknown</h1>
+<p id="hint" class="muted">鍵は URL の <code>#</code> の後ろに入れてください。</p>
 <pre id="out">loading...</pre>
 
 <script>
@@ -24,31 +35,54 @@ function b64ToU8(b64){
   for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
   return u8;
 }
+
 (async () => {
-  const out = document.getElementById("out");
+  const out   = document.getElementById("out");
+  const title = document.getElementById("title");
+  const hint  = document.getElementById("hint");
+
   const keyStr = decodeURIComponent(location.hash.slice(1) || "");
   if(!keyStr){
-    out.textContent = "鍵がありません。\n例: decrypt.html#FIIVJVV_XSQSRDS";
+    out.textContent = "……宛名が見当たりません。";
     return;
   }
 
   const res = await fetch("final.enc.json", {cache:"no-store"});
   if(!res.ok){
-    out.textContent = "final.enc.json が見つかりません。";
+    out.textContent = "undelivered";
     return;
   }
   const pack = await res.json();
 
   const keyBytes = await sha256(new TextEncoder().encode(keyStr));
-  const aesKey = await crypto.subtle.importKey("raw", keyBytes, {name:"AES-GCM"}, false, ["decrypt"]);
+  const aesKey = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    {name:"AES-GCM"},
+    false,
+    ["decrypt"]
+  );
 
   try{
     const iv = b64ToU8(pack.iv_b64);
     const ct = b64ToU8(pack.ct_b64);
-    const plainBuf = await crypto.subtle.decrypt({name:"AES-GCM", iv}, aesKey, ct);
+
+    const plainBuf = await crypto.subtle.decrypt(
+      {name:"AES-GCM", iv},
+      aesKey,
+      ct
+    );
+
+    // ===== 復号成功 =====
+    // 余計なUIを消す
+    title.remove();
+    hint.remove();
+
+    // 本文だけ表示
     out.textContent = new TextDecoder().decode(plainBuf);
+
   }catch(e){
-    out.textContent = "復号に失敗しました。\n鍵が違うか、暗号文が壊れています。";
+    out.textContent = "……鍵が違います。";
   }
 })();
 </script>
