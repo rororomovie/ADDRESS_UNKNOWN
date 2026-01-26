@@ -2,18 +2,53 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>—</title>
+
 <style>
   body{
-    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,
-                 "Liberation Mono","Courier New",monospace;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+                 "Liberation Mono", "Courier New", monospace;
     padding: 18px;
     line-height: 1.9;
+    background: #fff;
+    color: #000;
+  }
+  pre{
     white-space: pre-wrap;
+    margin: 0;
+  }
+  a{
+    color: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .muted{
+    opacity: .7;
   }
 </style>
+
+<pre id="text">loading...</pre>
+<div id="tail" class="muted"></div>
+
 <script>
-fetch("Undelivered_letter.txt", {cache:"no-store"})
-  .then(r => r.text())
-  .then(t => document.body.textContent = t)
-  .catch(() => document.body.textContent = "undelivered");
+(async () => {
+  try{
+    // stage1 の本文（テキストのみ）
+    const res = await fetch("Undelivered_letter.txt", { cache: "no-store" });
+    const text = await res.text();
+    document.getElementById("text").textContent = text;
+
+    // 最後にだけ誘導を追加
+    const tail = document.getElementById("tail");
+    tail.append(document.createTextNode("\n\n――投函を終えたなら、門へ。\n\n"));
+
+    const link = document.createElement("a");
+    // 相対パス：リポ名が変わっても壊れない
+    link.href = "../decrypt.html";
+    link.textContent = "→ 門を開く";
+    tail.append(link);
+
+  }catch(e){
+    document.getElementById("text").textContent = "undelivered";
+  }
+})();
 </script>
