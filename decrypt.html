@@ -12,27 +12,35 @@
     background:#fff;
     color:#000;
   }
-  pre{ white-space:pre-wrap; margin:0; }
+  pre{ white-space: pre-wrap; margin:0; }
+  .muted{ opacity:.7; }
+  .row{ margin-top:10px; }
   input, button{
     font: inherit;
     padding: 6px 10px;
-    margin-top: 10px;
     border: 1px solid #000;
-    background: #fff;
+    background:#fff;
   }
   button{ cursor:pointer; }
-  .muted{ opacity:.7; }
 </style>
 
-<h1 id="title">address unknown</h1>
+<h1>address unknown</h1>
+<pre class="muted">宛名を知っているなら、書いてください。</pre>
 
-<pre id="hint" class="muted">宛名を知っているなら、書いてください。</pre>
+<pre id="msg" class="muted"></pre>
 
-<input id="keyInput" placeholder="宛名" autocomplete="off" spellcheck="false">
-<br>
-<button id="openBtn">投函する</button>
+<div class="row">
+  <input
+    id="keyInput"
+    placeholder="宛名"
+    autocomplete="off"
+    spellcheck="false"
+  >
+</div>
 
-<pre id="out" class="muted"></pre>
+<div class="row">
+  <button id="postBtn">投函する</button>
+</div>
 
 <script>
 async function sha256(bytes){
@@ -46,48 +54,74 @@ function b64ToU8(b64){
   return u8;
 }
 
-async function tryDecrypt(keyStr){
-  const out = document.getElementById("out");
-  out.textContent = "";
+async function tryDecryptFromHash(){
+  const msg = document.getElementById("msg");
+  const keyStr = decodeURIComponent(location.hash.slice(1) || "");
 
-  // 鍵が空なら何もしない（入力欄は常に見える）
-  if(!keyStr) return;
+  if(!keyStr){
+    msg.textContent = "……宛名が見当たりません。";
+    return;
+  }
 
-  const res = await fetch("final.enc.json", { cache: "no-store" });
+  const res = await fetch("final.enc.json", { cache:"no-store" });
   if(!res.ok){
-    out.textContent = "undelivered";
+    msg.textContent = "undelivered";
     return;
   }
   const pack = await res.json();
 
   try{
     const keyBytes = await sha256(new TextEncoder().encode(keyStr));
-    const aesKey = await crypto.subtle.importKey("raw", keyBytes, { name:"AES-GCM" }, false, ["decrypt"]);
+    const aesKey = await crypto.subtle.importKey(
+      "raw",
+      keyBytes,
+      { name:"AES-GCM" },
+      false,
+      ["decrypt"]
+    );
 
     const iv = b64ToU8(pack.iv_b64);
     const ct = b64ToU8(pack.ct_b64);
 
-    const plainBuf = await crypto.subtle.decrypt({ name:"AES-GCM", iv }, aesKey, ct);
+    const plainBuf = await crypto.subtle.decrypt(
+      { name:"AES-GCM", iv },
+      aesKey,
+      ct
+    );
 
-    // 成功：UIを消して本文だけ
+    // ===== 成功 =====
     document.body.innerHTML = "";
     const pre = document.createElement("pre");
     pre.textContent = new TextDecoder().decode(plainBuf);
     document.body.appendChild(pre);
 
   }catch(e){
-    out.textContent = "……宛名が違います。";
+    msg.textContent = "……宛名が違います。";
   }
 }
 
-// ボタン
-document.getElementById("openBtn").addEventListener("click", () => {
-  tryDecrypt(document.getElementById("keyInput").value.trim());
+// 投函ボタン：hashを書き換えて再ロード
+document.getElementById("postBtn").addEventListener("click", () => {
+  const v = document.getElementById("keyInput").value.trim();
+  if(!v){
+    document.getElementById("msg").textContent = "……宛名が空です。";
+    return;
+  }
+  location.hash = encodeURIComponent(v);
+  location.reload();
 });
 
-// Enter
+// Enterキーでも投函
 document.getElementById("keyInput").addEventListener("keydown", e => {
-  if(e.key === "Enter") tryDecrypt(e.target.value.trim());
+  if(e.key === "Enter"){
+    document.getElementById("postBtn").click();
+  }
 });
 
-// URL #
+// 起動時：hashがあれば復号を試す
+if(location.hash){
+  document.getElementById("keyInput").value =
+    decodeURIComponent(location.hash.slice(1));
+  tryDecryptFromHash();
+}
+</script>
