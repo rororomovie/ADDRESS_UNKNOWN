@@ -16,10 +16,33 @@
     white-space:pre-wrap;
     margin:0;
   }
-  .muted{opacity:.7}
+  input, button{
+    font: inherit;
+    padding: 6px 10px;
+    margin-top: 10px;
+    border: 1px solid #000;
+    background: #fff;
+  }
+  button{ cursor:pointer; }
+  .muted{ opacity:.7; }
 </style>
 
-<pre id="out" class="muted">loading...</pre>
+<h1 id="title">address unknown</h1>
+
+<pre id="hint" class="muted">
+宛名を知っているなら、書いてください。
+</pre>
+
+<input
+  id="keyInput"
+  placeholder="宛名"
+  autocomplete="off"
+  spellcheck="false"
+/>
+<br>
+<button id="openBtn">投函する</button>
+
+<pre id="out" class="muted"></pre>
 
 <script>
 async function sha256(bytes){
@@ -33,9 +56,8 @@ function b64ToU8(b64){
   return u8;
 }
 
-(async () => {
+async function tryDecrypt(keyStr){
   const out = document.getElementById("out");
-  const keyStr = decodeURIComponent(location.hash.slice(1) || "");
 
   if(!keyStr){
     out.textContent = "……宛名が見当たりません。";
@@ -49,16 +71,16 @@ function b64ToU8(b64){
   }
   const pack = await res.json();
 
-  const keyBytes = await sha256(new TextEncoder().encode(keyStr));
-  const aesKey = await crypto.subtle.importKey(
-    "raw",
-    keyBytes,
-    { name:"AES-GCM" },
-    false,
-    ["decrypt"]
-  );
-
   try{
+    const keyBytes = await sha256(new TextEncoder().encode(keyStr));
+    const aesKey = await crypto.subtle.importKey(
+      "raw",
+      keyBytes,
+      { name:"AES-GCM" },
+      false,
+      ["decrypt"]
+    );
+
     const iv = b64ToU8(pack.iv_b64);
     const ct = b64ToU8(pack.ct_b64);
 
@@ -69,14 +91,32 @@ function b64ToU8(b64){
     );
 
     // ===== 復号成功 =====
-    // bodyを完全に置き換える（タイトル・説明文が残る余地ゼロ）
     document.body.innerHTML = "";
     const pre = document.createElement("pre");
     pre.textContent = new TextDecoder().decode(plainBuf);
     document.body.appendChild(pre);
 
   }catch(e){
-    out.textContent = "……鍵が違います。";
+    out.textContent = "……宛名が違います。";
   }
-})();
+}
+
+// ボタン
+document.getElementById("openBtn").addEventListener("click", () => {
+  tryDecrypt(document.getElementById("keyInput").value.trim());
+});
+
+// Enterキー
+document.getElementById("keyInput").addEventListener("keydown", e => {
+  if(e.key === "Enter"){
+    tryDecrypt(e.target.value.trim());
+  }
+});
+
+// URLの # に鍵がある場合は自動入力
+const hashKey = decodeURIComponent(location.hash.slice(1) || "");
+if(hashKey){
+  document.getElementById("keyInput").value = hashKey;
+  tryDecrypt(hashKey);
+}
 </script>
