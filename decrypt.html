@@ -1,0 +1,54 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>address unknown</title>
+<style>
+  body{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+       padding:16px; line-height:1.7;}
+  pre{white-space:pre-wrap; word-break:break-word;}
+  .muted{opacity:.7}
+</style>
+
+<h1>address unknown</h1>
+<p class="muted">鍵は URL の <code>#</code> の後ろに入れてください。</p>
+<pre id="out">loading...</pre>
+
+<script>
+async function sha256(bytes){
+  const h = await crypto.subtle.digest("SHA-256", bytes);
+  return new Uint8Array(h);
+}
+function b64ToU8(b64){
+  const bin = atob(b64);
+  const u8 = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  return u8;
+}
+(async () => {
+  const out = document.getElementById("out");
+  const keyStr = decodeURIComponent(location.hash.slice(1) || "");
+  if(!keyStr){
+    out.textContent = "鍵がありません。\n例: decrypt.html#FIIVJVV_XSQSRDS";
+    return;
+  }
+
+  const res = await fetch("final.enc.json", {cache:"no-store"});
+  if(!res.ok){
+    out.textContent = "final.enc.json が見つかりません。";
+    return;
+  }
+  const pack = await res.json();
+
+  const keyBytes = await sha256(new TextEncoder().encode(keyStr));
+  const aesKey = await crypto.subtle.importKey("raw", keyBytes, {name:"AES-GCM"}, false, ["decrypt"]);
+
+  try{
+    const iv = b64ToU8(pack.iv_b64);
+    const ct = b64ToU8(pack.ct_b64);
+    const plainBuf = await crypto.subtle.decrypt({name:"AES-GCM", iv}, aesKey, ct);
+    out.textContent = new TextDecoder().decode(plainBuf);
+  }catch(e){
+    out.textContent = "復号に失敗しました。\n鍵が違うか、暗号文が壊れています。";
+  }
+})();
+</script>
