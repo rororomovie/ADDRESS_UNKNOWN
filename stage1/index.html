@@ -39,12 +39,12 @@
 
     // 最後にだけ誘導を追加
     const tail = document.getElementById("tail");
-    tail.append(document.createTextNode("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n――投函を終えたなら、門へ。\n\n"));
+    tail.append(document.createTextNode("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"));
 
     const link = document.createElement("a");
     // 相対パス：リポ名が変わっても壊れない
     link.href = "../decrypt.html";
-    link.textContent = "→ 門を開く";
+    link.textContent = "――再投函へ。";
     tail.append(link);
 
   }catch(e){
