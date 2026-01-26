@@ -1,66 +1,19 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>address unknown</title>
+<title>—</title>
 <style>
   body{
-    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;
+    font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,
+                 "Liberation Mono","Courier New",monospace;
     padding: 18px;
-    line-height: 1.8;
+    line-height: 1.9;
+    white-space: pre-wrap;
   }
-  .muted{opacity:.7}
-  input{
-    width: min(520px, 100%);
-    padding: 10px 12px;
-    font: inherit;
-    margin-top: 12px;
-  }
-  button{
-    margin-top: 10px;
-    padding: 10px 12px;
-    font: inherit;
-    cursor: pointer;
-  }
-  pre{white-space:pre-wrap}
 </style>
-
-<h1>address unknown</h1>
-<pre class="muted">
-宛所に尋ねありません
-
-ここは入口です。
-あなたが“宛名”を知っているなら、書いてください。
-</pre>
-
-<input id="pass" placeholder="宛名（合言葉）" autocomplete="off" spellcheck="false">
-<br>
-<button id="go">投函する</button>
-
-<pre id="msg" class="muted"></pre>
-
 <script>
-  const STAGE1_PASSWORD = "DFFUITT_VQNQPAQ";
-
-  const pass = document.getElementById("pass");
-  const msg  = document.getElementById("msg");
-  const go   = document.getElementById("go");
-
-  function submit(){
-    const v = (pass.value || "").trim();
-    if(!v){
-      msg.textContent = "……宛名が空です。";
-      return;
-    }
-    if(v === STAGE1_PASSWORD){
-      location.href = "stage1/";
-    }else{
-      msg.textContent = "宛所に尋ねありません。";
-      pass.select();
-    }
-  }
-
-  go.addEventListener("click", submit);
-  pass.addEventListener("keydown", (e) => {
-    if(e.key === "Enter") submit();
-  });
+fetch("Undelivered_letter.txt", {cache:"no-store"})
+  .then(r => r.text())
+  .then(t => document.body.textContent = t)
+  .catch(() => document.body.textContent = "undelivered");
 </script>
