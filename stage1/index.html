@@ -44,14 +44,10 @@ a:active{
     const text = await res.text();
     document.getElementById("text").textContent = text;
 
-    // 最後にだけ誘導を追加
-    const tail = document.getElementById("tail");
-    tail.append(document.createTextNode("―宛所に尋ねあたりません。"));
-
     const link = document.createElement("a");
     // 相対パス：リポ名が変わっても壊れない
     link.href = "../decrypt.html";
-    link.textContent = "――再投函へ。";
+    link.textContent = "――宛所に尋ねあたりません。";
     tail.append(link);
 
   }catch(e){
